@@ -3,107 +3,482 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Towns</title>
+    <title>Interactive Globe with Towns Sub-List</title>
     <style>
         body, html {
             margin: 0;
             padding: 0;
-            font-family: Arial, sans-serif;
-            background: url('town.jfif') no-repeat center center fixed;
-            background-size: cover;
-            filter: brightness(70%); /* Reduce brightness of the background */
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            min-height: 100vh;
-            overflow: auto; /* Enable scrolling */
-        }
-
-        .town-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 20px;
-            padding: 20px;
-        }
-
-        .town-item {
-            background-color: rgba(255, 255, 255, 0.9);
-            border: 2px solid #ddd;
-            border-radius: 5px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            padding: 10px;
-        }
-
-        .town-item img {
+            height: 100%;
             width: 100%;
-            height: auto;
-            border-radius: 5px;
-            margin-bottom: 10px;
-        }
-
-        .add-town-container {
             display: flex;
-            justify-content: center;
-            padding: 20px;
+            font-family: 'Poppins', sans-serif;
+            background-color: #000000; /* Light background for contrast */
         }
 
-        .add-town-container button {
-            width: 150px;
-            height: 50px;
-            border: none;
-            background-color: #4CAF50;
-            color: white;
+        #chartdiv {
+            width: 80%; /* Globe takes 80% of the screen width */
+            height: 100vh;
+        }
+
+        #visited-countries {
+            width: 20%; /* Sidebar for visited countries */
+            height: 100vh;
+            background-color: #ffffff; /* White sidebar background */
+            padding: 20px;
+            color: #333; /* Dark text for contrast */
             font-size: 16px;
+            overflow-y: auto;
+            box-shadow: 2px 0px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+        }
+
+        h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #555;
+            text-align: center;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        /* Country list design */
+        ul li {
+            background-color: #f8f8f8; /* Light background */
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05); /* Soft shadow */
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            color: #333;
+            font-weight: bold;
+            cursor: pointer;
+            position: relative;
+        }
+
+        ul li:hover {
+            background-color: #e9f6ff; /* Light blue hover effect */
+            transform: translateY(-5px); /* Slightly lift on hover */
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1); /* Larger shadow on hover */
+        }
+
+        ul li::before {
+            content: "";
+            width: 5px;
+            height: 100%;
+            background-color: #3498db; /* Blue accent bar */
+            position: absolute;
+            top: 0;
+            left: 0;
+            border-radius: 10px 0 0 10px;
+        }
+
+        /* Sub-list for towns (darker fancy style) */
+        .sub-list {
+            margin-top: 10px;
+            padding: 0;
+            display: none; /* Hidden until the country is clicked */
+            font-size: 14px;
+            color: #333;
+        }
+
+        .sub-list li {
+            background-color: #f1f1f1; /* Light gray background for sublist */
+            margin: 5px 0;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+            transition: all 0.3s ease;
+            color: #555;
+            cursor: pointer;
+        }
+
+        .sub-list li:hover {
+            background-color: #dcedff; /* Light blue hover for sublist */
+            transform: translateX(10px); /* Move slightly on hover */
+        }
+
+        .sub-list li.selected {
+            background-color: #e74c3c;
+            color: #fff;
+        }
+
+        /* Add and remove buttons */
+        .add-town-button, .remove-town-button {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+        }
+
+        .add-town-button:hover, .remove-town-button:hover {
+            background-color: #2980b9;
+        }
+
+        .add-town-button {
+            margin-right: 10px; /* Added space between Add and Remove buttons */
+        }
+
+        .town-input-container {
+            display: none;
+            margin-top: 10px;
+            align-items: center;
+        }
+
+        .town-input {
+            padding: 10px;
+            font-size: 14px;
+            width: calc(100% - 80px);
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            margin-right: 10px;
+            background-color: #f8f8f8;
+            color: #333;
+        }
+
+        .add-town-submit {
+            padding: 10px 15px;
+            background-color: #2ecc71;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .add-town-submit:hover {
+            background-color: #27ae60;
+        }
+
+        /* Back button styling */
+        .back-button {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: #fff;
+            font-size: 16px;
+            border: none;
             border-radius: 5px;
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
 
-        .add-town-container button:hover {
-            background-color: #45a049;
+        .back-button:hover {
+            background-color: #2980b9;
         }
+
+        /* Confirmation modal styling */
+        .confirmation-modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .confirmation-box {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            width: 300px;
+            text-align: center;
+        }
+
+        .confirmation-box p {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .confirmation-box button {
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .confirm-yes {
+            background-color: #e74c3c;
+            color: #fff;
+        }
+
+        .confirm-no {
+            background-color: #3498db;
+            color: #fff;
+        }
+
     </style>
+
+    <!-- Include amCharts libraries -->
+    <script src="https://cdn.amcharts.com/lib/4/core.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/maps.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/geodata/worldLow.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
+
 </head>
 <body>
-    <div class="town-list" id="townList">
-        <!-- Towns will be added here -->
+
+    <!-- Sidebar for visited countries -->
+    <div id="visited-countries">
+        <h2>Visited Countries</h2>
+        <ul id="country-list"></ul> <!-- List of visited countries -->
+
+        <!-- Reset button -->
+        <button id="reset-button">Reset</button>
     </div>
 
-    <div class="add-town-container">
-        <button onclick="addTown()">Add Town</button>
+    <!-- Chart container for the globe -->
+    <div id="chartdiv"></div>
+
+    <!-- Back button -->
+    <button class="back-button" onclick="location.href='index.html'">Back</button>
+
+    <!-- Confirmation Modal -->
+    <div class="confirmation-modal" id="confirmation-modal">
+        <div class="confirmation-box">
+            <p>The country will be deselected and all the corresponding towns will be deleted. Are you sure you want to continue?</p>
+            <button class="confirm-yes">Yes</button>
+            <button class="confirm-no">No</button>
+        </div>
     </div>
 
     <script>
-        function addTown() {
-            const countryName = prompt("Enter the name of the country:");
-            const townName = prompt("Enter the name of the town:");
-            const townImage = prompt("Enter the URL of the image for the town:");
+        // Use amCharts animated theme
+        am4core.useTheme(am4themes_animated);
 
-            if (countryName && townName && townImage) {
-                const townList = document.getElementById('townList');
+        // Create map instance
+        var chart = am4core.create("chartdiv", am4maps.MapChart);
 
-                const townItem = document.createElement('div');
-                townItem.className = 'town-item';
+        // Set map definition
+        chart.geodata = am4geodata_worldLow;
 
-                const imgElement = document.createElement('img');
-                imgElement.src = townImage;
-                imgElement.alt = townName;
+        // Set projection
+        chart.projection = new am4maps.projections.Orthographic();
+        chart.panBehavior = "rotateLongLat";
+        chart.deltaLatitude = -20;
+        chart.padding(20, 20, 20, 20);
 
-                const countryElement = document.createElement('div');
-                countryElement.textContent = countryName;
-                countryElement.style.fontWeight = 'bold';
+        // Create map polygon series (countries)
+        var polygonSeries = chart.series.push(new am4maps.MapPolygonSeries());
+        polygonSeries.useGeodata = true;
 
-                const townElement = document.createElement('div');
-                townElement.textContent = townName;
+        var polygonTemplate = polygonSeries.mapPolygons.template;
+        polygonTemplate.tooltipText = "{name}";
+        polygonTemplate.polygon.fillOpacity = 0.7;
 
-                townItem.appendChild(imgElement);
-                townItem.appendChild(countryElement);
-                townItem.appendChild(townElement);
+        // Add hover state
+        var hs = polygonTemplate.states.create("hover");
+        hs.properties.fill = chart.colors.getIndex(1);
 
-                townList.appendChild(townItem);
-            }
+        // Add selected state
+        var activeState = polygonTemplate.states.create("active");
+        activeState.properties.fill = am4core.color("#32CD32"); // Green color for selection
+
+        // Load selected countries and towns from local storage
+        var selectedCountries = JSON.parse(localStorage.getItem('selectedCountries')) || [];
+
+        // Function to save selected countries and towns to local storage
+        function saveSelectedCountries() {
+            localStorage.setItem('selectedCountries', JSON.stringify(selectedCountries));
         }
+
+        // Function to update the list of selected countries and towns
+        function updateCountryList() {
+            var countryList = document.getElementById('country-list');
+            countryList.innerHTML = ''; // Clear the list
+
+            selectedCountries.forEach(function(country) {
+                if (country.name) {
+                    // Create the main country list item
+                    var listItem = document.createElement('li');
+                    listItem.textContent = country.name; // Display the country name
+
+                    // Create the sub-list for towns
+                    var subList = document.createElement('ul');
+                    subList.classList.add('sub-list');
+
+                    // Add each town to the sub-list
+                    country.towns.forEach(function(town, index) {
+                        var townItem = document.createElement('li');
+                        townItem.textContent = town;
+
+                        // Make towns clickable and selectable
+                        townItem.addEventListener('click', function(event) {
+                            event.stopPropagation(); // Prevent the sub-list from closing
+                            townItem.classList.toggle('selected'); // Highlight selected town
+                        });
+
+                        subList.appendChild(townItem);
+                    });
+
+                    // Add "Add Town" button to the sub-list
+                    var addTownButton = document.createElement('button');
+                    addTownButton.textContent = "Add Town";
+                    addTownButton.classList.add('add-town-button');
+                    subList.appendChild(addTownButton);
+
+                    // Add "Remove Town" button to the sub-list
+                    var removeTownButton = document.createElement('button');
+                    removeTownButton.textContent = "Remove Town";
+                    removeTownButton.classList.add('remove-town-button');
+                    subList.appendChild(removeTownButton);
+
+                    // Container for town input
+                    var townInputContainer = document.createElement('div');
+                    townInputContainer.classList.add('town-input-container');
+
+                    var townInput = document.createElement('input');
+                    townInput.classList.add('town-input');
+                    townInput.placeholder = "Enter town name";
+
+                    var submitTownButton = document.createElement('button');
+                    submitTownButton.textContent = "Add";
+                    submitTownButton.classList.add('add-town-submit');
+
+                    // Append input and button to container
+                    townInputContainer.appendChild(townInput);
+                    townInputContainer.appendChild(submitTownButton);
+                    subList.appendChild(townInputContainer);
+
+                    // Event listener to show input field when "Add Town" is clicked
+                    addTownButton.addEventListener('click', function(event) {
+                        event.stopPropagation(); // Prevent the country list from closing
+                        townInputContainer.style.display = 'flex'; // Show the input field and button
+                        townInput.focus();
+                    });
+
+                    // Event listener to add the town name to the sub-list
+                    submitTownButton.addEventListener('click', function(event) {
+                        event.stopPropagation(); // Prevent the country list from closing
+                        if (townInput.value.trim()) {
+                            var newTown = townInput.value.trim();
+                            // Add the new town to the list and storage
+                            country.towns.push(newTown);
+                            saveSelectedCountries();
+                            updateCountryList();
+                            townInput.value = ''; // Clear the input field
+                            townInputContainer.style.display = 'none'; // Hide the input container
+                        }
+                    });
+
+                    // Event listener to remove a selected town
+                    removeTownButton.addEventListener('click', function(event) {
+                        event.stopPropagation(); // Prevent the country list from closing
+                        var selectedTownItem = subList.querySelector('.selected');
+                        if (selectedTownItem) {
+                            var townIndex = country.towns.indexOf(selectedTownItem.textContent);
+                            if (townIndex > -1) {
+                                country.towns.splice(townIndex, 1); // Remove the town from the array
+                                selectedTownItem.remove(); // Remove the town from the DOM
+                                saveSelectedCountries(); // Save the updated list
+                            }
+                        }
+                    });
+
+                    // Append sub-list to the main list item
+                    listItem.appendChild(subList);
+                    countryList.appendChild(listItem);
+
+                    // Toggle sub-list only when clicking on the country name
+                    listItem.addEventListener('click', function(event) {
+                        // Only toggle the sub-list when clicking outside of the input, submit button, or "Add Town" button
+                        if (!event.target.closest('.town-input') && !event.target.closest('.add-town-submit') && !event.target.closest('.add-town-button') && !event.target.closest('.remove-town-button')) {
+                            subList.style.display = (subList.style.display === 'none' || subList.style.display === '') ? 'block' : 'none';
+                        }
+                    });
+                }
+            });
+        }
+
+        // Apply saved selections on page load
+        polygonSeries.events.on("inited", function() {
+            polygonSeries.mapPolygons.each(function(polygon) {
+                var countryId = polygon.dataItem.dataContext.id;
+                var countryName = polygon.dataItem.dataContext.name;
+                // If the country is in the selected list, mark it as active
+                if (selectedCountries.some(c => c.id === countryId)) {
+                    polygon.isActive = true;
+                }
+            });
+            updateCountryList(); // Update the list on page load
+        });
+
+        // Add event listener for click events to toggle selection
+        polygonTemplate.events.on("hit", function(ev) {
+            var target = ev.target;
+            var countryId = target.dataItem.dataContext.id;
+            var countryName = target.dataItem.dataContext.name;
+
+            // Check if country is already selected
+            if (target.isActive) {
+                // Show confirmation dialog
+                var confirmationModal = document.getElementById('confirmation-modal');
+                confirmationModal.style.display = 'flex';
+
+                // If "Yes" is clicked, proceed with deselecting the country
+                document.querySelector('.confirm-yes').onclick = function() {
+                    target.isActive = false; // Deselect (back to default color)
+                    // Remove the country and corresponding towns
+                    selectedCountries = selectedCountries.filter(c => c.id !== countryId);
+                    saveSelectedCountries();
+                    updateCountryList();
+                    confirmationModal.style.display = 'none'; // Close the modal
+                };
+
+                // If "No" is clicked, close the modal and do nothing
+                document.querySelector('.confirm-no').onclick = function() {
+                    confirmationModal.style.display = 'none'; // Close the modal
+                };
+            } else {
+                // Select the country as normal
+                target.isActive = true; // Select (turn green)
+                // Add to selected countries if it has a valid name
+                if (countryName) {
+                    selectedCountries.push({ id: countryId, name: countryName, towns: [] });
+                }
+
+                // Save to local storage and update the list
+                saveSelectedCountries();
+                updateCountryList();
+            }
+        });
+
+        // Add event listener for Reset button
+        document.getElementById('reset-button').addEventListener('click', function() {
+            var confirmReset = confirm("Are you sure you want to reset the list?");
+            if (confirmReset) {
+                // Clear selected countries and update everything
+                selectedCountries = [];
+                saveSelectedCountries();
+                updateCountryList();
+
+                // Deselect all countries on the globe
+                polygonSeries.mapPolygons.each(function(polygon) {
+                    polygon.isActive = false; // Reset all selections
+                });
+            }
+        });
+
+        // Add graticule (latitude and longitude grid lines)
+        var graticuleSeries = chart.series.push(new am4maps.GraticuleSeries());
+        graticuleSeries.mapLines.template.stroke = am4core.color("#ffffff");
+        graticuleSeries.mapLines.template.strokeOpacity = 0.2;
+
     </script>
+
 </body>
 </html>
