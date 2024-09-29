@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Towns</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: url('town.jfif') no-repeat center center fixed;
+            background-size: cover;
+            filter: brightness(70%); /* Reduce brightness of the background */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 100vh;
+            overflow: auto; /* Enable scrolling */
+        }
+
+        .town-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .town-item {
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            padding: 10px;
+        }
+
+        .town-item img {
+            width: 100%;
+            height: auto;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .add-town-container {
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .add-town-container button {
+            width: 150px;
+            height: 50px;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .add-town-container button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="town-list" id="townList">
+        <!-- Towns will be added here -->
+    </div>
+
+    <div class="add-town-container">
+        <button onclick="addTown()">Add Town</button>
+    </div>
+
+    <script>
+        function addTown() {
+            const countryName = prompt("Enter the name of the country:");
+            const townName = prompt("Enter the name of the town:");
+            const townImage = prompt("Enter the URL of the image for the town:");
+
+            if (countryName && townName && townImage) {
+                const townList = document.getElementById('townList');
+
+                const townItem = document.createElement('div');
+                townItem.className = 'town-item';
+
+                const imgElement = document.createElement('img');
+                imgElement.src = townImage;
+                imgElement.alt = townName;
+
+                const countryElement = document.createElement('div');
+                countryElement.textContent = countryName;
+                countryElement.style.fontWeight = 'bold';
+
+                const townElement = document.createElement('div');
+                townElement.textContent = townName;
+
+                townItem.appendChild(imgElement);
+                townItem.appendChild(countryElement);
+                townItem.appendChild(townElement);
+
+                townList.appendChild(townItem);
+            }
+        }
+    </script>
+</body>
+</html>
